@@ -1,22 +1,37 @@
 import string
 import sys
 import socket
-from itertools import product
+import itertools
+from typing import TextIO
 
-ip = sys.argv[1]
-port = int(sys.argv[2])
 
-char_base = list(string.ascii_lowercase + string.digits)
+def brute_force(char_base: list):
+    for i in range(1, 6):
+        for item in list(itertools.product(char_base, repeat=i)):
+            password = ''.join(item)
+            socket.send(password.encode())
+            response = socket.recv(64).decode()
+            if response == "Connection success!":
+                return password
+
+
+def dict_brute_force(common_passwords: TextIO):
+    for common_password in common_passwords:
+        passwords = list(map(lambda x: ''.join(x), itertools.product(*([letter.lower(), letter.upper()] if letter in string.ascii_lowercase else letter for letter in common_password.strip()))))
+        for password in passwords:
+            socket.send(password.encode())
+            response = socket.recv(64).decode()
+            if response == "Connection success!":
+                return password
+
+
+ip, port = sys.argv[1], int(sys.argv[2])
+chars = list(string.ascii_lowercase + string.digits)
+
 
 with socket.socket() as socket:
     socket.connect((ip, port))
-    for i in range(1, 6):
-        for item in list(product(char_base, repeat=i)):
-            password = ''.join(item).encode()
-            socket.send(password)
-            response = socket.recv(64).decode()
-            if response == "Connection success!":
-                print(password.decode())
-                break
-        if response == "Connection success!":
-            break
+    # print(brute_force(chars))
+    with open(r"C:\Users\Joao Marcos\PycharmProjects\Password Hacker\Password Hacker\task\passwords.txt", "r") as file:
+        print(dict_brute_force(file))
+
